@@ -1,0 +1,14 @@
+.mobile-app {
+  background: linear-gradient(to bottom, #1e90ff, #00bfff);
+  width: 375px;
+  height: 812px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Arial', sans-serif;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+}
