@@ -1,0 +1,347 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Who will be the first player</title>
+  <style>
+    :root {
+      --screen-blue: #1e88e5;
+      --text: #ffffff;
+      --card-bg: #ffffff;
+      --card-text: #0c3f73;
+      --shadow: rgba(0, 0, 0, 0.18);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    body {
+      background: var(--screen-blue);
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+
+    .page {
+      width: min(100%, 420px);
+      text-align: center;
+      display: grid;
+      gap: 14px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(1.35rem, 5.5vw, 2rem);
+      line-height: 1.2;
+    }
+
+    .controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      text-align: left;
+      background: rgba(255, 255, 255, 0.16);
+      border-radius: 14px;
+      padding: 10px 12px;
+    }
+
+    .controls label {
+      font-size: 1rem;
+      font-weight: 700;
+    }
+
+    .controls input {
+      width: 90px;
+      min-height: 44px;
+      border: 0;
+      border-radius: 10px;
+      text-align: center;
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: #083364;
+    }
+
+    .wheel-shell {
+      position: relative;
+      width: min(84vw, 320px);
+      height: min(84vw, 320px);
+      margin: 2px auto;
+    }
+
+    .pointer {
+      position: absolute;
+      top: -3px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 0;
+      height: 0;
+      border-left: 14px solid transparent;
+      border-right: 14px solid transparent;
+      border-top: 24px solid #ffffff;
+      filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.35));
+      z-index: 3;
+    }
+
+    .wheel-rotor {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      border: 5px solid rgba(255, 255, 255, 0.85);
+      box-shadow: 0 10px 24px var(--shadow);
+      overflow: hidden;
+      background: #ffffff;
+      transform: rotate(0deg);
+    }
+
+    .wheel-canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    .spin-btn {
+      width: 100%;
+      min-height: 58px;
+      border: 0;
+      border-radius: 14px;
+      background: var(--card-bg);
+      color: var(--card-text);
+      font-weight: 800;
+      font-size: 1.15rem;
+      cursor: pointer;
+      box-shadow: 0 8px 18px rgba(0, 0, 0, 0.14);
+    }
+
+    .spin-btn:disabled {
+      opacity: 0.72;
+      cursor: not-allowed;
+    }
+
+    .result {
+      margin: 0;
+      min-height: 1.45em;
+      font-size: clamp(1rem, 4.4vw, 1.22rem);
+      font-weight: 800;
+      opacity: 0;
+    }
+
+    .result.show {
+      opacity: 1;
+      animation: celebrate 520ms ease-out;
+    }
+
+    @keyframes celebrate {
+      0% {
+        transform: scale(0.96);
+      }
+      55% {
+        transform: scale(1.07);
+      }
+      100% {
+        transform: scale(1);
+      }
+    }
+
+    .back-link {
+      display: inline-block;
+      width: 100%;
+      min-height: 56px;
+      border-radius: 14px;
+      background: var(--card-bg);
+      color: var(--card-text);
+      text-decoration: none;
+      font-weight: 700;
+      font-size: 1.05rem;
+      line-height: 56px;
+      box-shadow: 0 8px 18px rgba(0, 0, 0, 0.14);
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <h1>Who will be the first player</h1>
+
+    <section class="controls" aria-label="Player count controls">
+      <label for="player-count">Number of players</label>
+      <input id="player-count" type="number" min="2" max="12" value="4" />
+    </section>
+
+    <section class="wheel-shell" aria-label="Player spinner">
+      <div class="pointer" aria-hidden="true"></div>
+      <div class="wheel-rotor" id="wheel-rotor">
+        <canvas class="wheel-canvas" id="wheel-canvas" width="320" height="320"></canvas>
+      </div>
+    </section>
+
+    <button class="spin-btn" id="spin-btn" type="button">Spin</button>
+    <p class="result" id="result" aria-live="polite"></p>
+
+    <a class="back-link" href="smartphone-screen.html">Back to Main Screen</a>
+  </main>
+
+  <script>
+    const MIN_PLAYERS = 2;
+    const MAX_PLAYERS = 12;
+    const SPIN_DURATION_MS = 3000;
+
+    const playerCountInput = document.getElementById("player-count");
+    const wheelRotor = document.getElementById("wheel-rotor");
+    const wheelCanvas = document.getElementById("wheel-canvas");
+    const spinButton = document.getElementById("spin-btn");
+    const resultText = document.getElementById("result");
+
+    let playerCount = 4;
+    let isSpinning = false;
+    let currentRotation = 0;
+
+    function clampPlayerCount(value) {
+      const parsed = Number.parseInt(value, 10);
+      if (Number.isNaN(parsed)) {
+        return MIN_PLAYERS;
+      }
+      return Math.max(MIN_PLAYERS, Math.min(MAX_PLAYERS, parsed));
+    }
+
+    function getSegmentColors(count) {
+      const colors = [];
+      for (let i = 0; i < count; i += 1) {
+        const hue = Math.round((360 / count) * i);
+        colors.push(`hsl(${hue} 85% 72%)`);
+      }
+      return colors;
+    }
+
+    function drawWheel(count) {
+      const dpr = window.devicePixelRatio || 1;
+      const canvasSize = Math.round(wheelCanvas.clientWidth * dpr);
+      if (wheelCanvas.width !== canvasSize || wheelCanvas.height !== canvasSize) {
+        wheelCanvas.width = canvasSize;
+        wheelCanvas.height = canvasSize;
+      }
+
+      const ctx = wheelCanvas.getContext("2d");
+      const size = wheelCanvas.width;
+      const center = size / 2;
+      const radius = center - 4 * dpr;
+      const slice = (Math.PI * 2) / count;
+      const colors = getSegmentColors(count);
+
+      ctx.clearRect(0, 0, size, size);
+
+      for (let i = 0; i < count; i += 1) {
+        const start = -Math.PI / 2 + i * slice;
+        const end = start + slice;
+
+        ctx.beginPath();
+        ctx.moveTo(center, center);
+        ctx.arc(center, center, radius, start, end);
+        ctx.closePath();
+        ctx.fillStyle = colors[i];
+        ctx.fill();
+
+        ctx.lineWidth = 2 * dpr;
+        ctx.strokeStyle = "rgba(255, 255, 255, 0.9)";
+        ctx.stroke();
+
+        const label = `Player ${i + 1}`;
+        const labelAngle = start + slice / 2;
+        const labelRadius = radius * 0.62;
+        const x = center + Math.cos(labelAngle) * labelRadius;
+        const y = center + Math.sin(labelAngle) * labelRadius;
+
+        const availableArc = 2 * labelRadius * Math.sin(slice / 2);
+        const fontSize = Math.max(9 * dpr, Math.min(16 * dpr, availableArc / 6.2));
+        ctx.font = `700 ${fontSize}px Segoe UI`;
+        ctx.fillStyle = "#082f56";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+
+        ctx.fillText(label, x, y);
+      }
+
+      ctx.beginPath();
+      ctx.arc(center, center, radius * 0.13, 0, Math.PI * 2);
+      ctx.fillStyle = "#ffffff";
+      ctx.fill();
+      ctx.lineWidth = 2 * dpr;
+      ctx.strokeStyle = "#b6d8ff";
+      ctx.stroke();
+    }
+
+    function updateWheelFromInput() {
+      playerCount = clampPlayerCount(playerCountInput.value);
+      playerCountInput.value = String(playerCount);
+      drawWheel(playerCount);
+      resultText.textContent = "";
+      resultText.classList.remove("show");
+    }
+
+    function setSpinningState(spinning) {
+      isSpinning = spinning;
+      spinButton.disabled = spinning;
+      playerCountInput.disabled = spinning;
+    }
+
+    function pickWinnerIndex(count) {
+      return Math.floor(Math.random() * count);
+    }
+
+    function spin() {
+      if (isSpinning) {
+        return;
+      }
+
+      setSpinningState(true);
+      resultText.textContent = "";
+      resultText.classList.remove("show");
+
+      const winnerIndex = pickWinnerIndex(playerCount);
+      const sliceDeg = 360 / playerCount;
+      const winnerCenterDeg = winnerIndex * sliceDeg + sliceDeg / 2;
+      const targetRotationMod = (360 - winnerCenterDeg) % 360;
+
+      const extraTurns = 3 + Math.floor(Math.random() * 4);
+      const currentRotationMod = ((currentRotation % 360) + 360) % 360;
+      const deltaToTarget = (targetRotationMod - currentRotationMod + 360) % 360;
+      const finalRotation = currentRotation + extraTurns * 360 + deltaToTarget;
+
+      wheelRotor.style.transition = `transform ${SPIN_DURATION_MS}ms cubic-bezier(0.18, 0.88, 0.25, 1)`;
+      wheelRotor.style.transform = `rotate(${finalRotation}deg)`;
+      currentRotation = finalRotation;
+
+      window.setTimeout(() => {
+        resultText.textContent = `First player: Player ${winnerIndex + 1}`;
+        resultText.classList.add("show");
+        setSpinningState(false);
+      }, SPIN_DURATION_MS + 40);
+    }
+
+    playerCountInput.addEventListener("input", () => {
+      if (!isSpinning) {
+        updateWheelFromInput();
+      }
+    });
+
+    spinButton.addEventListener("click", spin);
+
+    window.addEventListener("resize", () => {
+      drawWheel(playerCount);
+    });
+
+    updateWheelFromInput();
+  </script>
+</body>
+</html>

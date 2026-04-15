@@ -1,0 +1,442 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Life Counter</title>
+  <style>
+    :root {
+      --screen-blue: #1e88e5;
+      --text: #ffffff;
+      --ink: #082f57;
+      --panel-gap: 6px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    body {
+      background: radial-gradient(circle at 20% 15%, #4ea4f0 0%, #1e88e5 45%, #1768bb 100%);
+      color: var(--text);
+      padding: 10px;
+    }
+
+    .app {
+      width: min(100%, 430px);
+      height: min(100vh - 20px, 860px);
+      margin: 0 auto;
+      display: grid;
+      grid-template-rows: auto 1fr;
+      gap: 10px;
+    }
+
+    .toolbar {
+      background: rgba(255, 255, 255, 0.14);
+      border-radius: 16px;
+      padding: 10px;
+      display: grid;
+      gap: 8px;
+    }
+
+    .toolbar h1 {
+      margin: 0;
+      font-size: clamp(1.2rem, 4.8vw, 1.55rem);
+      text-align: center;
+    }
+
+    .toolbar-row {
+      display: grid;
+      grid-template-columns: 1fr auto auto;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .toolbar label {
+      font-weight: 700;
+      font-size: 0.96rem;
+    }
+
+    select,
+    .top-btn,
+    .back-link {
+      min-height: 42px;
+      border: 0;
+      border-radius: 10px;
+      background: #ffffff;
+      color: var(--ink);
+      font-weight: 800;
+      font-size: 0.95rem;
+      text-decoration: none;
+      text-align: center;
+      padding: 0 10px;
+      line-height: 42px;
+      box-shadow: 0 6px 14px rgba(0, 0, 0, 0.14);
+    }
+
+    select {
+      line-height: normal;
+    }
+
+    .life-board {
+      position: relative;
+      border-radius: 16px;
+      overflow: hidden;
+      min-height: 460px;
+      height: 100%;
+      background: rgba(255, 255, 255, 0.1);
+      display: grid;
+      gap: var(--panel-gap);
+      padding: var(--panel-gap);
+    }
+
+    .mode-2 {
+      grid-template-columns: 1fr;
+      grid-template-rows: 1fr 1fr;
+    }
+
+    .mode-3 {
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: 1fr 1fr;
+      grid-template-areas:
+        "p0 p1"
+        "p2 p2";
+    }
+
+    .mode-4,
+    .mode-5,
+    .mode-6 {
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .mode-4 {
+      grid-template-rows: 1fr 1fr;
+      gap: 2px;
+      padding: 2px;
+    }
+
+    .mode-5,
+    .mode-6 {
+      grid-template-rows: repeat(3, 1fr);
+    }
+
+    .player-panel {
+      position: relative;
+      border-radius: 14px;
+      color: #ffffff;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 10px;
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+    }
+
+    .mode-4 .player-panel {
+      border-radius: 0;
+      box-shadow: none;
+    }
+
+    .panel-content {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      transform: rotate(var(--face-rotation, 0deg));
+    }
+
+    .life-value {
+      margin: 0;
+      font-size: clamp(3rem, 16vw, 5.4rem);
+      line-height: 1;
+      font-weight: 900;
+      letter-spacing: 0.02em;
+      text-shadow: 0 3px 8px rgba(0, 0, 0, 0.28);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .player-name {
+      margin: 0;
+      font-size: clamp(0.85rem, 3.1vw, 1.05rem);
+      font-weight: 700;
+      opacity: 0.95;
+    }
+
+    .controls {
+      display: flex;
+      gap: 10px;
+    }
+
+    .life-btn {
+      min-width: 64px;
+      min-height: 54px;
+      border: 0;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.92);
+      color: #052a4f;
+      font-size: 1.8rem;
+      font-weight: 900;
+      line-height: 1;
+      cursor: pointer;
+      box-shadow: 0 7px 14px rgba(0, 0, 0, 0.18);
+    }
+
+    .life-btn:active {
+      transform: translateY(1px);
+    }
+
+    .mode-3 .player-panel[data-index="2"] {
+      grid-area: p2;
+    }
+
+    .mode-4 .life-value {
+      font-size: clamp(4.2rem, 21vw, 7rem);
+    }
+
+    .mode-4 .player-name {
+      display: none;
+    }
+
+    .mode-4 .controls {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+    }
+
+    .mode-4 .life-btn {
+      position: absolute;
+      pointer-events: auto;
+      width: 64px;
+      height: 64px;
+      min-width: 64px;
+      min-height: 64px;
+      border-radius: 50%;
+      font-size: 2rem;
+      background: rgba(255, 255, 255, 0.94);
+    }
+
+    .mode-4 .life-btn.minus {
+      top: 10px;
+      left: 10px;
+    }
+
+    .mode-4 .life-btn.plus {
+      bottom: 10px;
+      right: 10px;
+    }
+
+    .center-button {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      border: 0;
+      background: #ffffff;
+      color: #0b365f;
+      font-size: 1.4rem;
+      font-weight: 900;
+      box-shadow: 0 10px 18px rgba(0, 0, 0, 0.22);
+      cursor: pointer;
+      display: none;
+      z-index: 7;
+    }
+
+    .show-center .center-button {
+      display: block;
+    }
+
+    @media (max-width: 390px) {
+      .life-btn {
+        min-width: 58px;
+        min-height: 50px;
+      }
+
+      .mode-4 .life-btn {
+        width: 58px;
+        height: 58px;
+        min-width: 58px;
+        min-height: 58px;
+      }
+
+      .mode-4 .life-value {
+        font-size: clamp(3.7rem, 20vw, 6rem);
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <section class="toolbar">
+      <h1>Life Counter</h1>
+      <div class="toolbar-row">
+        <label for="player-count">Number of players</label>
+        <select id="player-count" aria-label="Number of players">
+          <option value="2">2</option>
+          <option value="3">3</option>
+          <option value="4" selected>4</option>
+          <option value="5">5</option>
+          <option value="6">6</option>
+        </select>
+        <button class="top-btn" id="reset-btn" type="button">Reset</button>
+      </div>
+      <a class="back-link" href="smartphone-screen.html">Back to Main Screen</a>
+    </section>
+
+    <section class="life-board mode-4 show-center" id="life-board" aria-label="Life counter board">
+      <button class="center-button" id="center-reset" type="button" aria-label="Reset life totals">R</button>
+    </section>
+  </main>
+
+  <script>
+    const board = document.getElementById("life-board");
+    const playerCountSelect = document.getElementById("player-count");
+    const resetButton = document.getElementById("reset-btn");
+    const centerResetButton = document.getElementById("center-reset");
+
+    const colorByIndex = [
+      "linear-gradient(160deg, #ca4b41 0%, #8f2a2c 100%)",
+      "linear-gradient(160deg, #2a8f58 0%, #1c663f 100%)",
+      "linear-gradient(160deg, #3a66ba 0%, #244389 100%)",
+      "linear-gradient(160deg, #8e5abf 0%, #613b8a 100%)",
+      "linear-gradient(160deg, #c9842b 0%, #8a5a1e 100%)",
+      "linear-gradient(160deg, #485d70 0%, #2d3a47 100%)"
+    ];
+
+    let playerCount = 4;
+    let startingLife = 40;
+    let lifeTotals = [];
+
+    function getStartingLife(count) {
+      return count === 2 ? 20 : 40;
+    }
+
+    function getFaceRotation(index, count) {
+      if (count === 2) {
+        return index === 0 ? 180 : 0;
+      }
+      if (count === 3) {
+        return index < 2 ? 180 : 0;
+      }
+      if (count === 4) {
+        return index < 2 ? 180 : 0;
+      }
+
+      const topPlayers = Math.ceil(count / 2);
+      return index < topPlayers ? 180 : 0;
+    }
+
+    function renderBoard() {
+      board.className = `life-board mode-${playerCount}`;
+      if (playerCount === 4) {
+        board.classList.add("show-center");
+      }
+
+      board.innerHTML = "";
+
+      for (let i = 0; i < playerCount; i += 1) {
+        const panel = document.createElement("article");
+        panel.className = "player-panel";
+        panel.dataset.index = String(i);
+        panel.style.background = colorByIndex[i % colorByIndex.length];
+
+        const content = document.createElement("div");
+        content.className = "panel-content";
+        content.style.setProperty("--face-rotation", `${getFaceRotation(i, playerCount)}deg`);
+
+        const name = document.createElement("p");
+        name.className = "player-name";
+        name.textContent = `Player ${i + 1}`;
+
+        const lifeValue = document.createElement("p");
+        lifeValue.className = "life-value";
+        lifeValue.textContent = String(lifeTotals[i]);
+
+        const controls = document.createElement("div");
+        controls.className = "controls";
+
+        const minus = document.createElement("button");
+        minus.className = "life-btn minus";
+        minus.type = "button";
+        minus.dataset.player = String(i);
+        minus.dataset.delta = "-1";
+        minus.textContent = "−";
+
+        const plus = document.createElement("button");
+        plus.className = "life-btn plus";
+        plus.type = "button";
+        plus.dataset.player = String(i);
+        plus.dataset.delta = "1";
+        plus.textContent = "+";
+
+        controls.appendChild(minus);
+        controls.appendChild(plus);
+
+        content.appendChild(name);
+        content.appendChild(lifeValue);
+        content.appendChild(controls);
+        panel.appendChild(content);
+        board.appendChild(panel);
+      }
+
+      if (playerCount === 4) {
+        board.appendChild(centerResetButton);
+      }
+    }
+
+    function resetLives() {
+      lifeTotals = Array.from({ length: playerCount }, () => startingLife);
+      renderBoard();
+    }
+
+    function setPlayerCount(nextCount) {
+      playerCount = nextCount;
+      startingLife = getStartingLife(playerCount);
+      resetLives();
+    }
+
+    board.addEventListener("click", (event) => {
+      const target = event.target;
+      if (!(target instanceof HTMLButtonElement)) {
+        return;
+      }
+
+      const playerIndex = Number.parseInt(target.dataset.player || "", 10);
+      const delta = Number.parseInt(target.dataset.delta || "", 10);
+      if (Number.isNaN(playerIndex) || Number.isNaN(delta)) {
+        return;
+      }
+
+      lifeTotals[playerIndex] += delta;
+      const display = board.querySelector(`.player-panel[data-index=\"${playerIndex}\"] .life-value`);
+      if (display) {
+        display.textContent = String(lifeTotals[playerIndex]);
+      }
+    });
+
+    playerCountSelect.addEventListener("change", () => {
+      const value = Number.parseInt(playerCountSelect.value, 10);
+      const safe = Math.max(2, Math.min(6, value));
+      setPlayerCount(safe);
+    });
+
+    resetButton.addEventListener("click", resetLives);
+    centerResetButton.addEventListener("click", resetLives);
+
+    setPlayerCount(4);
+  </script>
+</body>
+</html>

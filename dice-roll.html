@@ -1,0 +1,360 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Dice Roll</title>
+  <style>
+    :root {
+      --screen-blue: #1e88e5;
+      --text: #ffffff;
+      --card-bg: #ffffff;
+      --card-text: #0c3f73;
+      --soft-shadow: rgba(0, 0, 0, 0.18);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    body {
+      background: var(--screen-blue);
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+
+    .page {
+      width: min(100%, 420px);
+      text-align: center;
+      display: grid;
+      gap: 14px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(1.35rem, 5.5vw, 2rem);
+      line-height: 1.2;
+    }
+
+    .controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      text-align: left;
+      background: rgba(255, 255, 255, 0.16);
+      border-radius: 14px;
+      padding: 10px 12px;
+    }
+
+    .controls label {
+      font-size: 1rem;
+      font-weight: 700;
+    }
+
+    .controls select {
+      width: 100px;
+      min-height: 44px;
+      border: 0;
+      border-radius: 10px;
+      font-size: 1.02rem;
+      font-weight: 700;
+      text-align: center;
+      color: #083364;
+      background: #ffffff;
+    }
+
+    .roll-btn {
+      width: 100%;
+      min-height: 58px;
+      border: 0;
+      border-radius: 14px;
+      background: var(--card-bg);
+      color: var(--card-text);
+      font-weight: 800;
+      font-size: 1.15rem;
+      cursor: pointer;
+      box-shadow: 0 8px 18px rgba(0, 0, 0, 0.14);
+    }
+
+    .roll-btn:disabled {
+      opacity: 0.72;
+      cursor: not-allowed;
+    }
+
+    .dice-area {
+      min-height: 176px;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      align-items: center;
+      gap: 12px;
+      padding: 10px;
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.14);
+      perspective: 900px;
+    }
+
+    .die {
+      position: relative;
+      width: clamp(58px, 16vw, 76px);
+      aspect-ratio: 1;
+      border-radius: 16px;
+      background: #ffffff;
+      box-shadow: 0 10px 18px var(--soft-shadow), inset 0 -3px 8px rgba(0, 0, 0, 0.08);
+      transform-style: preserve-3d;
+      filter: blur(0);
+    }
+
+    .die.rolling {
+      animation: dice-roll 960ms cubic-bezier(0.18, 0.74, 0.3, 1) both;
+      animation-delay: var(--delay, 0ms);
+    }
+
+    @keyframes dice-roll {
+      0% {
+        transform: translateY(-24px) rotateX(0deg) rotateY(0deg) rotateZ(0deg) scale(1.03);
+        filter: blur(2.5px);
+      }
+      35% {
+        transform: translateY(8px) rotateX(var(--rx1)) rotateY(var(--ry1)) rotateZ(var(--rz1));
+        filter: blur(1.2px);
+      }
+      70% {
+        transform: translateY(-6px) rotateX(var(--rx2)) rotateY(var(--ry2)) rotateZ(var(--rz2));
+        filter: blur(0.6px);
+      }
+      100% {
+        transform: translateY(0) rotateX(0deg) rotateY(0deg) rotateZ(0deg) scale(1);
+        filter: blur(0);
+      }
+    }
+
+    .pip {
+      position: absolute;
+      width: 14%;
+      aspect-ratio: 1;
+      border-radius: 50%;
+      background: #171717;
+      display: none;
+      box-shadow: inset 0 0 2px rgba(255, 255, 255, 0.4);
+    }
+
+    .pip.show {
+      display: block;
+    }
+
+    .pip.tl {
+      top: 18%;
+      left: 18%;
+    }
+
+    .pip.tc {
+      top: 18%;
+      left: 43%;
+    }
+
+    .pip.tr {
+      top: 18%;
+      right: 18%;
+    }
+
+    .pip.ml {
+      top: 43%;
+      left: 18%;
+    }
+
+    .pip.mc {
+      top: 43%;
+      left: 43%;
+    }
+
+    .pip.mr {
+      top: 43%;
+      right: 18%;
+    }
+
+    .pip.bl {
+      bottom: 18%;
+      left: 18%;
+    }
+
+    .pip.bc {
+      bottom: 18%;
+      left: 43%;
+    }
+
+    .pip.br {
+      bottom: 18%;
+      right: 18%;
+    }
+
+    .total {
+      margin: 0;
+      min-height: 1.4em;
+      font-size: clamp(1rem, 4.5vw, 1.28rem);
+      font-weight: 800;
+    }
+
+    .back-link {
+      display: inline-block;
+      width: 100%;
+      min-height: 56px;
+      border-radius: 14px;
+      background: var(--card-bg);
+      color: var(--card-text);
+      text-decoration: none;
+      font-weight: 700;
+      font-size: 1.05rem;
+      line-height: 56px;
+      box-shadow: 0 8px 18px rgba(0, 0, 0, 0.14);
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <h1>Dice Roll</h1>
+
+    <section class="controls" aria-label="Dice controls">
+      <label for="dice-count">Number of dice</label>
+      <select id="dice-count">
+        <option value="1">1</option>
+        <option value="2" selected>2</option>
+        <option value="3">3</option>
+        <option value="4">4</option>
+        <option value="5">5</option>
+        <option value="6">6</option>
+      </select>
+    </section>
+
+    <button class="roll-btn" id="roll-btn" type="button">Roll</button>
+
+    <section class="dice-area" id="dice-area" aria-live="polite" aria-label="Dice results"></section>
+    <p class="total" id="total">Total: 0</p>
+
+    <a class="back-link" href="smartphone-screen.html">Back to Main Screen</a>
+  </main>
+
+  <script>
+    const FACE_TO_PIPS = {
+      1: ["mc"],
+      2: ["tl", "br"],
+      3: ["tl", "mc", "br"],
+      4: ["tl", "tr", "bl", "br"],
+      5: ["tl", "tr", "mc", "bl", "br"],
+      6: ["tl", "tr", "ml", "mr", "bl", "br"]
+    };
+
+    const PIP_POSITIONS = ["tl", "tc", "tr", "ml", "mc", "mr", "bl", "bc", "br"];
+    const ROLL_DURATION_MS = 1200;
+
+    const diceCountSelect = document.getElementById("dice-count");
+    const rollButton = document.getElementById("roll-btn");
+    const diceArea = document.getElementById("dice-area");
+    const totalText = document.getElementById("total");
+
+    let rolling = false;
+    let currentValues = [1, 1];
+
+    function randomFace() {
+      return Math.floor(Math.random() * 6) + 1;
+    }
+
+    function createDie(value, withAnimation, index) {
+      const die = document.createElement("div");
+      die.className = "die";
+      die.setAttribute("role", "img");
+      die.setAttribute("aria-label", `Die ${index + 1}: ${value}`);
+
+      if (withAnimation) {
+        die.classList.add("rolling");
+        die.style.setProperty("--delay", `${Math.floor(Math.random() * 180)}ms`);
+        die.style.setProperty("--rx1", `${480 + Math.floor(Math.random() * 320)}deg`);
+        die.style.setProperty("--ry1", `${420 + Math.floor(Math.random() * 280)}deg`);
+        die.style.setProperty("--rz1", `${100 + Math.floor(Math.random() * 140)}deg`);
+        die.style.setProperty("--rx2", `${120 + Math.floor(Math.random() * 90)}deg`);
+        die.style.setProperty("--ry2", `${90 + Math.floor(Math.random() * 80)}deg`);
+        die.style.setProperty("--rz2", `${20 + Math.floor(Math.random() * 40)}deg`);
+      }
+
+      const visiblePips = new Set(FACE_TO_PIPS[value]);
+      for (const position of PIP_POSITIONS) {
+        const pip = document.createElement("span");
+        pip.className = `pip ${position}`;
+        if (visiblePips.has(position)) {
+          pip.classList.add("show");
+        }
+        die.appendChild(pip);
+      }
+
+      return die;
+    }
+
+    function renderDice(values, animate) {
+      diceArea.innerHTML = "";
+      values.forEach((value, index) => {
+        diceArea.appendChild(createDie(value, animate, index));
+      });
+    }
+
+    function updateTotal(values) {
+      const total = values.reduce((sum, value) => sum + value, 0);
+      totalText.textContent = `Total: ${total}`;
+    }
+
+    function updateDiceCountPreview() {
+      if (rolling) {
+        return;
+      }
+
+      const count = Number.parseInt(diceCountSelect.value, 10);
+      const nextValues = currentValues.slice(0, count);
+      while (nextValues.length < count) {
+        nextValues.push(1);
+      }
+      currentValues = nextValues;
+      renderDice(currentValues, false);
+      updateTotal(currentValues);
+    }
+
+    function rollDice() {
+      if (rolling) {
+        return;
+      }
+
+      rolling = true;
+      rollButton.disabled = true;
+      diceCountSelect.disabled = true;
+
+      const count = Number.parseInt(diceCountSelect.value, 10);
+      const nextValues = Array.from({ length: count }, () => randomFace());
+
+      renderDice(nextValues, true);
+
+      window.setTimeout(() => {
+        currentValues = nextValues;
+        updateTotal(currentValues);
+        rolling = false;
+        rollButton.disabled = false;
+        diceCountSelect.disabled = false;
+      }, ROLL_DURATION_MS + 220);
+    }
+
+    diceCountSelect.addEventListener("change", updateDiceCountPreview);
+    rollButton.addEventListener("click", rollDice);
+
+    updateDiceCountPreview();
+  </script>
+</body>
+</html>

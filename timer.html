@@ -1,0 +1,360 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Timer</title>
+  <style>
+    :root {
+      --screen-blue: #1e88e5;
+      --text: #ffffff;
+      --card-bg: #ffffff;
+      --card-text: #0c3f73;
+      --panel: rgba(255, 255, 255, 0.16);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    body {
+      background: var(--screen-blue);
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+
+    .page {
+      width: min(100%, 420px);
+      text-align: center;
+      display: grid;
+      gap: 12px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(1.35rem, 5.5vw, 2rem);
+      line-height: 1.2;
+    }
+
+    .presets {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .preset-btn,
+    .action-btn {
+      min-height: 50px;
+      border: 0;
+      border-radius: 12px;
+      background: var(--card-bg);
+      color: var(--card-text);
+      font-size: 1.02rem;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: 0 8px 18px rgba(0, 0, 0, 0.14);
+    }
+
+    .preset-btn.active {
+      box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.6), 0 8px 18px rgba(0, 0, 0, 0.14);
+    }
+
+    .manual {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      background: var(--panel);
+      border-radius: 14px;
+      padding: 10px;
+    }
+
+    .field {
+      text-align: left;
+      display: grid;
+      gap: 6px;
+    }
+
+    .field label {
+      font-size: 0.92rem;
+      font-weight: 700;
+    }
+
+    .field input {
+      width: 100%;
+      min-height: 44px;
+      border: 0;
+      border-radius: 10px;
+      text-align: center;
+      font-size: 1.02rem;
+      font-weight: 700;
+      color: #083364;
+    }
+
+    .display {
+      margin: 0;
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.2);
+      padding: 14px 10px;
+      font-size: clamp(2.3rem, 14vw, 3.2rem);
+      font-weight: 800;
+      line-height: 1;
+      letter-spacing: 0.04em;
+      font-variant-numeric: tabular-nums;
+      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.22);
+    }
+
+    .actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .action-btn:disabled,
+    .preset-btn:disabled {
+      opacity: 0.7;
+      cursor: not-allowed;
+    }
+
+    .hint {
+      margin: 0;
+      min-height: 1.4em;
+      font-size: 0.95rem;
+      font-weight: 700;
+      opacity: 0.96;
+    }
+
+    .back-link {
+      display: inline-block;
+      width: 100%;
+      min-height: 56px;
+      border-radius: 14px;
+      background: var(--card-bg);
+      color: var(--card-text);
+      text-decoration: none;
+      font-weight: 700;
+      font-size: 1.05rem;
+      line-height: 56px;
+      box-shadow: 0 8px 18px rgba(0, 0, 0, 0.14);
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <h1>Timer</h1>
+
+    <section class="presets" aria-label="Preset timer buttons">
+      <button class="preset-btn" type="button" data-seconds="30">30 sec</button>
+      <button class="preset-btn" type="button" data-seconds="45">45 sec</button>
+      <button class="preset-btn" type="button" data-seconds="60">60 sec</button>
+      <button class="preset-btn" type="button" data-seconds="120">2 min</button>
+    </section>
+
+    <section class="manual" aria-label="Manual timer input">
+      <div class="field">
+        <label for="minutes-input">Minutes</label>
+        <input id="minutes-input" type="number" min="0" max="99" value="0" inputmode="numeric" />
+      </div>
+      <div class="field">
+        <label for="seconds-input">Seconds</label>
+        <input id="seconds-input" type="number" min="0" max="59" value="30" inputmode="numeric" />
+      </div>
+    </section>
+
+    <p class="display" id="display" aria-live="polite">00:30</p>
+
+    <section class="actions" aria-label="Timer actions">
+      <button class="action-btn" id="start-btn" type="button">Start</button>
+      <button class="action-btn" id="reset-btn" type="button">Reset</button>
+    </section>
+
+    <p class="hint" id="status">Ready</p>
+
+    <a class="back-link" href="smartphone-screen.html">Back to Main Screen</a>
+  </main>
+
+  <script>
+    const minutesInput = document.getElementById("minutes-input");
+    const secondsInput = document.getElementById("seconds-input");
+    const display = document.getElementById("display");
+    const startButton = document.getElementById("start-btn");
+    const resetButton = document.getElementById("reset-btn");
+    const statusText = document.getElementById("status");
+    const presetButtons = Array.from(document.querySelectorAll(".preset-btn"));
+
+    let totalSeconds = 30;
+    let remainingSeconds = 30;
+    let timerRunning = false;
+    let startedAtMs = 0;
+    let endsAtMs = 0;
+    let rafId = null;
+
+    function clampNumber(value, min, max) {
+      const parsed = Number.parseInt(value, 10);
+      if (Number.isNaN(parsed)) {
+        return min;
+      }
+      return Math.max(min, Math.min(max, parsed));
+    }
+
+    function formatMMSS(valueSeconds) {
+      const safe = Math.max(0, valueSeconds);
+      const minutes = Math.floor(safe / 60);
+      const seconds = safe % 60;
+      return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+    }
+
+    function renderDisplay() {
+      display.textContent = formatMMSS(remainingSeconds);
+    }
+
+    function setPresetActive(seconds) {
+      presetButtons.forEach((btn) => {
+        const btnSeconds = Number.parseInt(btn.dataset.seconds, 10);
+        btn.classList.toggle("active", btnSeconds === seconds);
+      });
+    }
+
+    function syncInputsFromTotal() {
+      const minutes = Math.floor(totalSeconds / 60);
+      const seconds = totalSeconds % 60;
+      minutesInput.value = String(minutes);
+      secondsInput.value = String(seconds);
+    }
+
+    function applyManualInput() {
+      const minutes = clampNumber(minutesInput.value, 0, 99);
+      const seconds = clampNumber(secondsInput.value, 0, 59);
+      minutesInput.value = String(minutes);
+      secondsInput.value = String(seconds);
+
+      totalSeconds = minutes * 60 + seconds;
+      if (totalSeconds === 0) {
+        totalSeconds = 1;
+        secondsInput.value = "1";
+      }
+      remainingSeconds = totalSeconds;
+      setPresetActive(-1);
+      renderDisplay();
+      statusText.textContent = "Ready";
+    }
+
+    function selectPreset(seconds) {
+      if (timerRunning) {
+        return;
+      }
+
+      totalSeconds = seconds;
+      remainingSeconds = totalSeconds;
+      syncInputsFromTotal();
+      setPresetActive(seconds);
+      renderDisplay();
+      statusText.textContent = "Ready";
+    }
+
+    function stopAnimationLoop() {
+      if (rafId !== null) {
+        window.cancelAnimationFrame(rafId);
+        rafId = null;
+      }
+    }
+
+    function tick(nowMs) {
+      if (!timerRunning) {
+        return;
+      }
+
+      const msLeft = Math.max(0, endsAtMs - nowMs);
+      const secondsLeft = Math.ceil(msLeft / 1000);
+      remainingSeconds = secondsLeft;
+      renderDisplay();
+
+      if (msLeft <= 0) {
+        timerRunning = false;
+        startButton.disabled = false;
+        minutesInput.disabled = false;
+        secondsInput.disabled = false;
+        presetButtons.forEach((btn) => {
+          btn.disabled = false;
+        });
+        statusText.textContent = "Time is up";
+        stopAnimationLoop();
+        return;
+      }
+
+      rafId = window.requestAnimationFrame(tick);
+    }
+
+    function startTimer() {
+      if (timerRunning) {
+        return;
+      }
+
+      if (remainingSeconds <= 0) {
+        remainingSeconds = totalSeconds;
+      }
+
+      timerRunning = true;
+      startButton.disabled = true;
+      minutesInput.disabled = true;
+      secondsInput.disabled = true;
+      presetButtons.forEach((btn) => {
+        btn.disabled = true;
+      });
+
+      startedAtMs = performance.now();
+      endsAtMs = startedAtMs + remainingSeconds * 1000;
+      statusText.textContent = "Running";
+      rafId = window.requestAnimationFrame(tick);
+    }
+
+    function resetTimer() {
+      timerRunning = false;
+      stopAnimationLoop();
+      remainingSeconds = totalSeconds;
+      renderDisplay();
+      startButton.disabled = false;
+      minutesInput.disabled = false;
+      secondsInput.disabled = false;
+      presetButtons.forEach((btn) => {
+        btn.disabled = false;
+      });
+      statusText.textContent = "Ready";
+    }
+
+    presetButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        const seconds = Number.parseInt(button.dataset.seconds, 10);
+        selectPreset(seconds);
+      });
+    });
+
+    minutesInput.addEventListener("change", () => {
+      if (!timerRunning) {
+        applyManualInput();
+      }
+    });
+
+    secondsInput.addEventListener("change", () => {
+      if (!timerRunning) {
+        applyManualInput();
+      }
+    });
+
+    startButton.addEventListener("click", startTimer);
+    resetButton.addEventListener("click", resetTimer);
+
+    selectPreset(30);
+  </script>
+</body>
+</html>

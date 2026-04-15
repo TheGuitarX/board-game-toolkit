@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Simple Smartphone Screen</title>
+  <style>
+    :root {
+      --screen-blue: #1e88e5;
+      --text: #ffffff;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html, body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    body {
+      background: var(--screen-blue);
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 16px;
+    }
+
+    .screen {
+      width: min(100%, 420px);
+      display: grid;
+      gap: 14px;
+    }
+
+    .card-button {
+      width: 100%;
+      min-height: 88px;
+      border: 0;
+      border-radius: 16px;
+      background: #ffffff;
+      color: #0c3f73;
+      font-size: clamp(1.1rem, 4.8vw, 1.35rem);
+      font-weight: 700;
+      line-height: 1.2;
+      padding: 14px 18px;
+      cursor: pointer;
+      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.14);
+      text-align: center;
+    }
+
+    .card-button:active {
+      transform: translateY(1px);
+    }
+  </style>
+</head>
+<body>
+  <main class="screen" aria-label="Game Tools">
+    <button class="card-button" id="first-player-btn" type="button">Who will be the first player</button>
+    <button class="card-button" id="dice-roll-btn" type="button">Dice Roll</button>
+    <button class="card-button" id="stopwatch-btn" type="button">Stopwatch</button>
+    <button class="card-button" id="timer-btn" type="button">Timer</button>
+    <button class="card-button" id="life-counter-btn" type="button">Life Counter</button>
+  </main>
+
+  <script>
+    const firstPlayerButton = document.getElementById("first-player-btn");
+    const diceRollButton = document.getElementById("dice-roll-btn");
+    const stopwatchButton = document.getElementById("stopwatch-btn");
+    const timerButton = document.getElementById("timer-btn");
+    const lifeCounterButton = document.getElementById("life-counter-btn");
+
+    firstPlayerButton.addEventListener("click", () => {
+      window.location.href = "who-will-be-first-player.html";
+    });
+
+    diceRollButton.addEventListener("click", () => {
+      window.location.href = "dice-roll.html";
+    });
+
+    stopwatchButton.addEventListener("click", () => {
+      window.location.href = "stopwatch.html";
+    });
+
+    timerButton.addEventListener("click", () => {
+      window.location.href = "timer.html";
+    });
+
+    lifeCounterButton.addEventListener("click", () => {
+      window.location.href = "life-counter.html";
+    });
+  </script>
+</body>
+</html>
